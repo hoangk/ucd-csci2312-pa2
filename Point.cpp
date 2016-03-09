@@ -9,6 +9,11 @@
 namespace Clustering {
 
 
+    Point::Point(){
+        __dim = 0;
+        __values = 0;
+    }
+
     Point::Point(int initDim) {
         if (initDim != 0) {
             __dim = initDim;
@@ -59,24 +64,31 @@ namespace Clustering {
     }
 
     void Point::setValue(int i, double d) {
-
+        if (i > __dim) {
+            std::cout << "out of range " << std::endl;
+        }
+        this-> __values[i-1] = d;
     }
 
     double Point::getValue(int i) const {
-        return 0;
+        if (i > __dim) {
+            std::cout << "out of range " << std::endl;
+        }
+        return this->__values[i-1];;
     }
 
     double Point::distanceTo(const Point &point) const {
+        double dis = 0;
         if (point.__dim == __dim) {
             double sum = 0.0;
             for (int i = 0; i < __dim; i++) {
                 sum += ((point.__values[i] - __values[i]) * (point.__values[i] - __values[i]));
             }
-            return sqrt(sum);
+            dis = sqrt(sum);
         }
-        return 0;
-    }
+        return dis;
 
+    }
     Point &Point::operator*=(double d) {
         for (int i = 0; i < __dim; i++) {
             __values[i] *= d;

@@ -9,9 +9,9 @@ namespace Clustering {
 
     struct LNode {
 
-        Point point;
+        Point p;
         LNodePtr next;
-        LNode(const Point &p, LNodePtr n);
+        LNode(const Point &point, LNodePtr n);
 
     };
 
