@@ -20,37 +20,44 @@ namespace Clustering {
 //bool Cluster::__in(const Point &p) const {
 //    return false;
 //}
-    LNode::LNode(const Point &point, LNodePtr n) {
-        this->p = point;
-        this->next = n;
+    LNode::LNode(const Point &point, LNodePtr n) :
+            p(point),
+            next(n)
+    {}
 
-    }
     Cluster::Cluster() {
         __size = 0;
         __points = nullptr;
     }
 
 // copy constructor
-    Cluster::Cluster(const Cluster &cluster) {
-        __size = cluster.__size;
-        LNodePtr pointer = __points;
-        LNodePtr clusterpointer = cluster.__points;
-        while (clusterpointer->next != nullptr) {
-            pointer->p = clusterpointer->p;       //
-            pointer = pointer->next;          //update left side
-            clusterpointer = clusterpointer->next; // update right side
+    Cluster::Cluster(const Cluster &cluster): Cluster() {
+      // Cluster();
+        for(int i = 0; i < cluster.__size; i++){
+            add(cluster[i]);
         }
 
     }
 
     Cluster &Cluster::operator=(const Cluster &cluster) {
-        __size = cluster.__size;
-        LNodePtr pointer = __points;
-        LNodePtr clusterpointer = cluster.__points;
-        while (clusterpointer->next != nullptr) {
-            pointer->p = clusterpointer->p;       //
-            pointer = pointer->next;          //update left side
-            clusterpointer = clusterpointer->next; // update right side
+
+        if (__size > 0)
+        {
+            LNodePtr tempPtr;
+            LNodePtr cursor = __points;
+
+            while (cursor != NULL)
+            {
+                tempPtr = cursor;
+                cursor = cursor->next;
+                delete tempPtr;
+            }
+            __size = 0;
+        }
+
+        for (int n = 0; n < cluster.getSize(); ++n)
+        {
+            add(cluster[n]);
         }
         return *this;
     }
@@ -59,7 +66,6 @@ namespace Clustering {
     Cluster::~Cluster() {
         LNodePtr tempPointer = __points;
         while (__points != nullptr) {
-            // delete __points->p;
             delete __points;
             __points = tempPointer->next;
             tempPointer = __points;
@@ -71,43 +77,85 @@ namespace Clustering {
     }
 
     void Cluster::add(const Point &point) {
-        if (__points == nullptr) {
-            LNodePtr pointer = __points;
-            pointer->p = point;
+        if (__size == 0)
+        {
+            __size++;
+            LNodePtr newNode = new LNode(point ,nullptr);
+            __points = newNode;
         }
-        else {
-            LNodePtr currentPointer = __points;
-            if (currentPointer->p > point) {
-                LNodePtr nextPointer = currentPointer;
-                currentPointer = __points;
+
+        else
+        {
+            if (contains(point))
+                return;
+            LNodePtr next;
+            LNodePtr previous;
+
+            next = __points;
+            previous = nullptr;
+
+            while (next != nullptr)
+            {
+                if (point < next -> p)
+                {
+                    if (previous == nullptr)
+                    {
+                        __points = new LNode(point, next);
+                        __size++;
+                        return;
+                    }
+                    else
+                    {
+                        previous -> next = new LNode(point, next);
+                        ++__size;
+                        return;
+                    }
+                }
+                previous = next;
+                next = next->next;
+
             }
+
+            LNodePtr newPtr =new LNode(point, nullptr);
+            previous->next = newPtr;
+            __size++;
         }
-        __size++;
+
     }
 
     const Point &Cluster::remove(const Point &point) {
-        LNodePtr previousPointer = __points;
-        LNodePtr currentPointer = __points;
-        while (currentPointer->next != nullptr) {
-            if (currentPointer->p == point) {
-                LNodePtr tempPointer;
-                tempPointer = currentPointer;
-                previousPointer->next = currentPointer->next;
-                delete tempPointer;
-                __size--;
-            }
-            previousPointer = currentPointer;
-            currentPointer = currentPointer->next;
+        if (contains(point)) {
+            LNodePtr next;
+            LNodePtr previous = nullptr;
+            next = __points;
+            while (next != nullptr)
+
+                if (next->p == point) {
+                    if (previous == nullptr) {
+                        __points = next->next;
+                        delete next;
+                        __size--;
+                        break;
+                    }
+                }
         }
+    return point;
     }
 
+
     bool Cluster::contains(const Point &point) {
-        LNodePtr currentPointer = __points;
-        while (currentPointer->next != nullptr) {
-            if (currentPointer->p == point) {
+
+        LNodePtr next = __points;
+
+        while (next != nullptr)
+        {
+
+            if (next->p.getId() == point.getId())
+
                 return true;
-            }
-            currentPointer = currentPointer->next;
+
+            else
+                next = next->next;
         }
 
         return false;
@@ -115,10 +163,9 @@ namespace Clustering {
 
     const Point &Cluster::operator[](unsigned int index) const {
         LNodePtr currentPtr = __points;
-        int i = 0;
-        while (i < index) {
-            return currentPtr->p;
-            i++;
+
+        for (int i = 0; i < index; i++) {
+            currentPtr = currentPtr->next;
         }
         return currentPtr->p;
     }
@@ -134,26 +181,15 @@ namespace Clustering {
     }
 
     Cluster &Cluster::operator+=(const Cluster &cluster) {
-        LNodePtr currentPtr = cluster.__points;
-        while (currentPtr->next != nullptr) {
-            if (this->contains(currentPtr->p)) {
-                currentPtr = currentPtr->next;
-            }
-            else {
-                this->add(currentPtr->p);
-                currentPtr = currentPtr->next;
-            }
+        for(int i = 0; i < cluster.__size; i++){
+            add(cluster[i]);
         }
         return *this;
     }
 
     Cluster &Cluster::operator-=(const Cluster &cluster) {
-        LNodePtr currentPtr = cluster.__points;
-        while (currentPtr->next != nullptr) {
-            if (this->contains(currentPtr->p)) {
-                this->remove(currentPtr->p);
-            }
-            currentPtr = currentPtr->next;
+        for(int i = 0; i < cluster.__size; i++){
+            remove(cluster[i]);
         }
         return *this;
     }
@@ -180,80 +216,45 @@ namespace Clustering {
     }
 
     bool operator==(const Cluster &cluster, const Cluster &cluster1) {
-        if (cluster.__size != cluster1.__size)
+        if (cluster.getSize() != cluster1.getSize())
             return false;
         else {
-            LNodePtr currentPtr1 = cluster.__points;
-            LNodePtr currentPtr2 = cluster1.__points;
-            while (currentPtr1->next != nullptr) {
-                if (currentPtr1->p != currentPtr2->p) {
+            for(int i = 0; i < cluster.getSize(); i++){
+                if(cluster[i] !=cluster1[i]){
                     return false;
                 }
-                currentPtr1 = currentPtr1->next;
-                currentPtr2 = currentPtr2->next;
             }
         }
         return true;
     }
+    bool operator !=(const Cluster &cluster, const Cluster &cluster1 ) {
+        if (cluster == cluster1)
+            return false;
+        return true;
+    }
 
     const Cluster operator+(const Cluster &cluster, const Point &point) {
-        LNodePtr currentPtr = cluster.__points;
-        if (currentPtr == nullptr) {
-            currentPtr = cluster.__points;
-            currentPtr->p = point;
-        }
-        else {
-            while (currentPtr->next != nullptr) {
-                currentPtr = currentPtr->next;
-            }
-            LNodePtr newPointer = new LNode(point, nullptr);
-            newPointer->p = point;
-            newPointer->next = nullptr;
-            currentPtr->next = newPointer;
-        }
-        return cluster;
+        Cluster cluster1(cluster);
+        cluster1 += point;
+        return cluster1;
     }
 
     const Cluster operator-(const Cluster &cluster, const Point &point) {
-        LNodePtr currentPtr = cluster.__points;
-        LNodePtr previousPtr = nullptr;
-        while (currentPtr->next != nullptr) {
-            if (currentPtr->p == point) {
-                LNodePtr tempPointer;
-                tempPointer = currentPtr;
-                previousPtr->next = currentPtr->next;
-                delete tempPointer;
-            }
-            previousPtr = currentPtr;
-            currentPtr = currentPtr->next;
-        }
-        return cluster;
+        Cluster cluster1(cluster);
+        cluster1 -= point;
+        return cluster1;
     }
 
     const Cluster operator+(const Cluster &cluster, const Cluster &cluster1) {
-        LNodePtr currentPtr1 = cluster.__points;
-        LNodePtr currentPtr2 = cluster1.__points;
-        while (currentPtr1->next != nullptr) {
-            if (currentPtr1->p == currentPtr2->p) {
-
-            }
-        }
-//        bool Cluster::contains(const Point &point) {
-//            LNodePtr currentPointer = __points;
-//            while (currentPointer->next != nullptr) {
-//                if (currentPointer->p == point) {
-//                    return true;
-//                }
-//                currentPointer = currentPointer->next;
-//            }
-//
-//            return false;
-//        }
-        return cluster;
+        Cluster unionCluster(cluster);
+        unionCluster += cluster1;
+        return unionCluster;
     }
-// n2bdone
+
     const Cluster operator-(const Cluster &cluster, const Cluster &cluster1) {
-        return Cluster();
+            Cluster differenceCluster(cluster);
+            differenceCluster -= cluster1;
+        return differenceCluster;
     }
 
 
