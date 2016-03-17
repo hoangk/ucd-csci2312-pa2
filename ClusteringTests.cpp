@@ -143,6 +143,12 @@ void test_point_getsetelem(ErrorContext &ec, unsigned int numRuns) {
                         (p.getValue(i) == 0.0) &&
                         (p[i] == 0.0);
             }
+
+            if (!pass) {
+                for (int i = 0; i < 50; i ++) std::cout << p[i] << ',';
+//                std::cout << p << std::endl;
+            }
+
             ec.result(pass);
         }
 
